@@ -125,111 +125,115 @@
         <div id="communityList"></div>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster-src.js"></script>
+
     <script>
         // Initialize the map, center on Calgary and set zoom level to 13
         var map = L.map('map').setView([51.0447, -114.0719], 13);
-    
-        // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+
+// Add OpenStreetMap tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// Create a marker cluster group
+var markers = L.markerClusterGroup();
+
+// Fetch and add community boundaries layer
+var communityBoundaries;
+fetch('https://data.calgary.ca/resource/surr-xmvs.geojson')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Community Boundaries Data:', data); // Log the data
+        communityBoundaries = L.geoJSON(data, {
+            style: function (feature) {
+                return {
+                    color: "#4A83EC",
+                    weight: 2,
+                    opacity: 0.6
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(`<strong>Community:</strong> ${feature.properties.name}`);
+            }
         }).addTo(map);
-    
-        // Fetch and add community boundaries layer
-        var communityBoundaries;
-        var permitData;
-        fetch('https://data.calgary.ca/resource/surr-xmvs.geojson')
-            .then(response => response.json())
-            .then(data => {
-                communityBoundaries = L.geoJSON(data, {
-                    style: function (feature) {
-                        return {
-                            color: "#4A83EC",
-                            weight: 2,
-                            opacity: 0.6
-                        };
-                    },
-                    onEachFeature: function (feature, layer) {
-                        layer.bindPopup(`<strong>Community:</strong> ${feature.properties.name}`);
-                        
-                    }
-                }).addTo(map);
-            })
-            .catch(error => console.error('Error loading community boundaries GeoJSON data:', error));
-    
-        // Calculate the date two years ago from today
-        var today = new Date();
-        var twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
-        var twoYearsAgoISO = twoYearsAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    
-        // Load GeoJSON data and add to the map
-        var geojsonLayer;
-        var url = `https://data.calgary.ca/resource/c2es-76ed.geojson?$where=issueddate >= '${twoYearsAgoISO}'&$limit=700000`;
-    
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                permitData = data;
-                geojsonLayer = L.geoJSON(data, {
-                    pointToLayer: function (feature, latlng) {
-                        var cost = feature.properties.estprojectcost;
-                        var color = getColor(cost);
-                        return L.circleMarker(latlng, {
-                            radius: 8,
-                            fillColor: color,
-                            color: "#000",
-                            weight: 1,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        });
-                    },
-                    onEachFeature: function (feature, layer) {
-                        var formattedCost = '$' + Math.round(feature.properties.estprojectcost / 1000).toLocaleString() + 'K';
-                        var popupContent = `<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
-                                            <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
-                                            <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
-                                            <strong>Description:</strong> ${feature.properties.description}<br>
-                                            <strong>Housing Units:</strong> ${feature.properties.housingunits}<br>
-                                            <strong>Estimated Project Cost:</strong> ${formattedCost}`;
-                        layer.bindPopup(popupContent);
-                    }
-                }).addTo(map);
-                populateFilters(data);
-                applyFilter('Completed', 1, 1000); // Apply default filter
-                updateCommunityList(communityBoundaries);
-            })
-            .catch(error => console.error('Error loading GeoJSON data:', error));
-    
-        // Populate the status filter dropdown
-        function populateFilters(data) {
-            var statusSet = new Set();
-            data.features.forEach(feature => {
-                statusSet.add(feature.properties.statuscurrent);
-            });
-    
-            var statusFilter = document.getElementById('statusFilter');
-            statusSet.forEach(status => {
-                var option = document.createElement('option');
-                option.value = status;
-                option.text = status;
-                statusFilter.appendChild(option);
-            });
-    
-            // Set default value to "Completed"
-            statusFilter.value = "Completed";
-        }
-    
-        // Apply filter to the GeoJSON layer
-        document.getElementById('filterButton').addEventListener('click', function() {
-            var selectedStatus = document.getElementById('statusFilter').value;
-            var housingMin = document.getElementById('housingMinInput').value;
-            var housingMax = document.getElementById('housingMaxInput').value;
-            applyFilter(selectedStatus, housingMin, housingMax);
+    })
+    .catch(error => console.error('Error loading community boundaries GeoJSON data:', error));
+
+var today = new Date();
+var twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
+var twoYearsAgoISO = twoYearsAgo.toISOString().split('T')[0];
+
+var geojsonLayer;
+var permitData;
+var url = `https://data.calgary.ca/resource/c2es-76ed.geojson?$where=issueddate >= '${twoYearsAgoISO}'&$limit=700000`;
+
+fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        console.log('Permit Data:', data); // Log the data
+        permitData = data;
+        geojsonLayer = L.geoJSON(data, {
+            pointToLayer: function (feature, latlng) {
+                var cost = feature.properties.estprojectcost;
+                var color = getColor(cost);
+                var marker = L.circleMarker(latlng, {
+                    radius: 8,
+                    fillColor: color,
+                    color: "#000",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(`<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
+                              <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
+                              <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
+                              <strong>Description:</strong> ${feature.properties.description}<br>
+                              <strong>Housing Units:</strong> ${feature.properties.housingunits}<br>
+                              <strong>Estimated Project Cost:</strong> $${Math.round(cost / 1000).toLocaleString()}K`);
+                markers.addLayer(marker);
+                return marker;
+            }
         });
-    
-        function applyFilter(status, housingMin, housingMax) {
+        map.addLayer(markers);
+        populateFilters(data);
+        applyFilter('Completed', 0, 100);
+        updateCommunityList(data);
+    })
+    .catch(error => console.error('Error loading GeoJSON data:', error));
+
+// Populate the status filter dropdown
+function populateFilters(data) {
+    var statusSet = new Set();
+    data.features.forEach(feature => {
+        statusSet.add(feature.properties.statuscurrent);
+    });
+
+    var statusFilter = document.getElementById('statusFilter');
+    statusSet.forEach(status => {
+        var option = document.createElement('option');
+        option.value = status;
+        option.text = status;
+        statusFilter.appendChild(option);
+    });
+
+    statusFilter.value = "Completed";
+}
+
+document.getElementById('filterButton').addEventListener('click', function() {
+    var selectedStatus = document.getElementById('statusFilter').value;
+    var housingMin = document.getElementById('housingMinInput').value;
+    var housingMax = document.getElementById('housingMaxInput').value;
+    applyFilter(selectedStatus, housingMin, housingMax);
+});
+
+function applyFilter(status, housingMin, housingMax) {
     if (geojsonLayer) {
         map.removeLayer(geojsonLayer);
     }
+
+    markers.clearLayers();
 
     let filterUrl = `https://data.calgary.ca/resource/c2es-76ed.geojson?$where=issueddate >= '${twoYearsAgoISO}'`;
     if (status) {
@@ -245,7 +249,6 @@
             return response.json();
         })
         .then(data => {
-            console.log('Filtered Permit Data:', data); // Log the filtered data
             if (!data || !data.features) {
                 throw new Error("Invalid GeoJSON data");
             }
@@ -253,44 +256,40 @@
                 pointToLayer: function (feature, latlng) {
                     var cost = feature.properties.estprojectcost;
                     var color = getColor(cost);
-                    return L.circleMarker(latlng, {
+                    var marker = L.circleMarker(latlng, {
                         radius: 8,
                         fillColor: color,
                         color: "#000",
                         weight: 1,
                         opacity: 1,
                         fillOpacity: 0.8
-                    });
-                },
-                onEachFeature: function (feature, layer) {
-                    var formattedCost = '$' + Math.round(feature.properties.estprojectcost / 1000).toLocaleString() + 'K';
-                    var popupContent = `<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
-                                        <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
-                                        <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
-                                        <strong>Description:</strong> ${feature.properties.description}<br>
-                                        <strong>Housing Units:</strong> ${feature.properties.housingunits}<br>
-                                        <strong>Estimated Project Cost:</strong> ${formattedCost}`;
-                    layer.bindPopup(popupContent);
+                    }).bindPopup(`<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
+                                  <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
+                                  <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
+                                  <strong>Description:</strong> ${feature.properties.description}<br>
+                                  <strong>Housing Units:</strong> ${feature.properties.housingunits}<br>
+                                  <strong>Estimated Project Cost:</strong> $${Math.round(cost / 1000).toLocaleString()}K`);
+                    markers.addLayer(marker);
+                    return marker;
                 }
-            }).addTo(map);
-            updateCommunityList(data); // Update community list based on filtered data
+            });
+            map.addLayer(markers);
+            updateCommunityList(data);
         })
         .catch(error => console.error('Error loading GeoJSON data:', error));
 }
 
+function getColor(cost) {
+    return cost > 1000000 ? '#800026' :
+           cost > 500000  ? '#BD0026' :
+           cost > 200000  ? '#E31A1C' :
+           cost > 100000  ? '#FC4E2A' :
+           cost > 50000   ? '#FD8D3C' :
+           cost > 20000   ? '#FEB24C' :
+           cost > 10000   ? '#FED976' :
+                            '#FFEDA0';
+}
 
-        // Function to get color based on estimated project cost
-        function getColor(cost) {
-            return cost > 1000000 ? '#800026' :
-                   cost > 500000  ? '#BD0026' :
-                   cost > 200000  ? '#E31A1C' :
-                   cost > 100000  ? '#FC4E2A' :
-                   cost > 50000   ? '#FD8D3C' :
-                   cost > 20000   ? '#FEB24C' :
-                   cost > 10000   ? '#FED976' :
-                                    '#FFEDA0';
-        }
-    
  // Update community list with sums of permits, housing units, and estimated project costs
  function updateCommunityList(data) {
     if (!data || !data.features) {
@@ -369,5 +368,3 @@
     
 </body>
 </html>
-
-
