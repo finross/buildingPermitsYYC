@@ -187,7 +187,7 @@ fetch(url)
                     opacity: 1,
                     fillOpacity: 0.8
                 }).bindPopup(`<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
-                              <strong>Status:</strong> ${feature.properties.address}<br>
+                              <strong>Status:</strong> ${feature.properties.originaladdress}<br>
                               <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
                               <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
                               <strong>Description:</strong> ${feature.properties.description}<br>
@@ -265,7 +265,7 @@ function applyFilter(status, housingMin, housingMax) {
                         opacity: 1,
                         fillOpacity: 0.8
                     }).bindPopup(`<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
-                                  <strong>Status:</strong> ${feature.properties.address}<br>
+                                  <strong>Status:</strong> ${feature.properties.originaladdress}<br>
                                   <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
                                   <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
                                   <strong>Description:</strong> ${feature.properties.description}<br>
