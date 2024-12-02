@@ -328,7 +328,7 @@ function getColor(cost) {
         return { name: name, ...communities[name] };
     }).sort((a, b) => b.permits - a.permits);
 
-    communityListDiv.innerHTML = '<h3>Community Statistics</h3>';
+    communityListDiv.innerHTML = '<h3>Community Statistics (last 2 years)</h3>';
     sortedCommunities.forEach(community => {
         var listItem = document.createElement('div');
         listItem.classList.add('community-item'); // Add class for filtering and event handling
