@@ -245,7 +245,7 @@ document.getElementById('filterButton').addEventListener('click', function() {
     var selectedPermitType = document.getElementById('permitTypeFilter').value;
     var housingMin = document.getElementById('housingMinInput').value;
     var housingMax = document.getElementById('housingMaxInput').value;
-    applyFilter(selectedStatus, electedPermitType, housingMin, housingMax);
+    applyFilter(selectedStatus, selectedPermitType, housingMin, housingMax);
 });
 
 function applyFilter(status, housingMin, housingMax) {
