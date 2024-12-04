@@ -111,6 +111,12 @@
             </select>
         </div>
         <div class="filter-container">
+            <label for="pemitTypeFilter">Filter by Type:</label>
+            <select id="permitTypeFilter">
+                <option value="">Select Status</option>
+            </select>
+        </div>
+        <div class="filter-container">
             <label for="housingMinInput">Filter by Housing Units (min):</label>
             <input type="number" id="housingMinInput" min="0" value="1">
         </div>
@@ -220,13 +226,26 @@ function populateFilters(data) {
     });
 
     statusFilter.value = "Completed";
+    
+    var permitTypeSet = new Set(); 
+    data.features.forEach(feature => { 
+        permitTypeSet.add(feature.properties.permittype); 
+    }); 
+    var permitTypeFilter = document.getElementById('permitTypeFilter'); 
+    permitTypeSet.forEach(permitType => { 
+        var option = document.createElement('option'); 
+        option.value = permitType;
+        option.text = permitType;
+        permitTypeFilter.appendChild(option); 
+    });
 }
 
 document.getElementById('filterButton').addEventListener('click', function() {
     var selectedStatus = document.getElementById('statusFilter').value;
+    var selectedPermitType = document.getElementById('permitTypeFilter').value;
     var housingMin = document.getElementById('housingMinInput').value;
     var housingMax = document.getElementById('housingMaxInput').value;
-    applyFilter(selectedStatus, housingMin, housingMax);
+    applyFilter(selectedStatus, electedPermitType, housingMin, housingMax);
 });
 
 function applyFilter(status, housingMin, housingMax) {
@@ -240,6 +259,7 @@ function applyFilter(status, housingMin, housingMax) {
     if (status) {
         filterUrl += ` AND statuscurrent='${encodeURIComponent(status)}'`;
     }
+    var selectedPermitType = document.getElementById('permitTypeFilter').value; if (selectedPermitType) { filterUrl += ` AND permittype='${encodeURIComponent(selectedPermitType)}'`; }
     filterUrl += ` AND housingunits >= ${housingMin} AND housingunits <= ${housingMax} &$limit=700000`;
 
     fetch(filterUrl)
