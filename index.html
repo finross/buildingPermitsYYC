@@ -248,7 +248,7 @@ document.getElementById('filterButton').addEventListener('click', function() {
     applyFilter(selectedStatus, selectedPermitType, housingMin, housingMax);
 });
 
-function applyFilter(status, housingMin, housingMax) {
+function applyFilter(status, permitType,housingMin, housingMax) {
     if (geojsonLayer) {
         map.removeLayer(geojsonLayer);
     }
@@ -259,7 +259,8 @@ function applyFilter(status, housingMin, housingMax) {
     if (status) {
         filterUrl += ` AND statuscurrent='${encodeURIComponent(status)}'`;
     }
-    var selectedPermitType = document.getElementById('permitTypeFilter').value; if (selectedPermitType) { filterUrl += ` AND permittype='${encodeURIComponent(selectedPermitType)}'`; }
+    var selectedPermitType = document.getElementById('permitTypeFilter').value; 
+    if (permitType)  { filterUrl += ` AND permittype='${encodeURIComponent(permitType)}'`; }
     filterUrl += ` AND housingunits >= ${housingMin} AND housingunits <= ${housingMax} &$limit=700000`;
 
     fetch(filterUrl)
