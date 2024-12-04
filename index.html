@@ -111,9 +111,9 @@
             </select>
         </div>
         <div class="filter-container">
-            <label for="pemitTypeFilter">Filter by Type:</label>
+            <label for="permitTypeFilter">Filter by Permit Type:</label>
             <select id="permitTypeFilter">
-                <option value="">Select Status</option>
+                <option value="">Select Type</option>
             </select>
         </div>
         <div class="filter-container">
@@ -193,8 +193,9 @@ fetch(url)
                     opacity: 1,
                     fillOpacity: 0.8
                 }).bindPopup(`<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
-                              <strong>Status:</strong> ${feature.properties.originaladdress}<br>
-                              <strong>Address:</strong> ${feature.properties.statuscurrent}<br>
+                              <strong>Address:</strong> ${feature.properties.originaladdress}<br>
+                              <strong>Status:</strong> ${feature.properties.statuscurrent}<br>
+                              <strong>Permit Type:</strong> ${feature.properties.statuscurrent}<br>
                               <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
                               <strong>Description:</strong> ${feature.properties.description}<br>
                               <strong>Housing Units:</strong> ${feature.properties.housingunits}<br>
@@ -205,7 +206,7 @@ fetch(url)
         });
         map.addLayer(markers);
         populateFilters(data);
-        applyFilter('Completed', 1, 1000);
+        applyFilter('Completed','Residential Improvement Project', 1, 1000);
         updateCommunityList(data);
     })
     .catch(error => console.error('Error loading GeoJSON data:', error));
@@ -213,8 +214,11 @@ fetch(url)
 // Populate the status filter dropdown
 function populateFilters(data) {
     var statusSet = new Set();
+    var permitTypeSet = new Set();
+
     data.features.forEach(feature => {
         statusSet.add(feature.properties.statuscurrent);
+        permitTypeSet.add(feature.properties.permittype);
     });
 
     var statusFilter = document.getElementById('statusFilter');
@@ -225,30 +229,27 @@ function populateFilters(data) {
         statusFilter.appendChild(option);
     });
 
-    statusFilter.value = "Completed";
-    
-    var permitTypeSet = new Set(); 
-    data.features.forEach(feature => { 
-        permitTypeSet.add(feature.properties.permittype); 
-    }); 
-    var permitTypeFilter = document.getElementById('permitTypeFilter'); 
-    permitTypeSet.forEach(permitType => { 
-        var option = document.createElement('option'); 
-        option.value = permitType;
-        option.text = permitType;
-        permitTypeFilter.appendChild(option); 
+    var permitTypeFilter = document.getElementById('permitTypeFilter');
+    permitTypeSet.forEach(type => {
+        var option = document.createElement('option');
+        option.value = type;
+        option.text = type;
+        permitTypeFilter.appendChild(option);
     });
+
+    statusFilter.value = "Completed";
+    permitTypeFilter.value="Residential Improvement Project";
 }
 
 document.getElementById('filterButton').addEventListener('click', function() {
     var selectedStatus = document.getElementById('statusFilter').value;
-    var selectedPermitType = document.getElementById('permitTypeFilter').value;
+    var selectedType = document.getElementById('permitTypeFilter').value;
     var housingMin = document.getElementById('housingMinInput').value;
     var housingMax = document.getElementById('housingMaxInput').value;
-    applyFilter(selectedStatus, selectedPermitType, housingMin, housingMax);
+    applyFilter(selectedStatus,selectedType, housingMin, housingMax);
 });
 
-function applyFilter(status, permitType,housingMin, housingMax) {
+function applyFilter(status,permitType, housingMin, housingMax) {
     if (geojsonLayer) {
         map.removeLayer(geojsonLayer);
     }
@@ -256,12 +257,13 @@ function applyFilter(status, permitType,housingMin, housingMax) {
     markers.clearLayers();
 
     let filterUrl = `https://data.calgary.ca/resource/c2es-76ed.geojson?$where=issueddate >= '${twoYearsAgoISO}'`;
-    if (status) {
-        filterUrl += ` AND statuscurrent='${encodeURIComponent(status)}'`;
-    }
-    var selectedPermitType = document.getElementById('permitTypeFilter').value; 
-    if (permitType)  { filterUrl += ` AND permittype='${encodeURIComponent(permitType)}'`; }
-    filterUrl += ` AND housingunits >= ${housingMin} AND housingunits <= ${housingMax} &$limit=700000`;
+if (status) {
+    filterUrl += ` AND statuscurrent='${encodeURIComponent(status)}'`;
+}
+if (permitType) {
+    filterUrl += ` AND permittype='${encodeURIComponent(permitType)}'`;
+}
+filterUrl += ` AND housingunits >= ${housingMin} AND housingunits <= ${housingMax} &$limit=700000`;
 
     fetch(filterUrl)
         .then(response => {
@@ -286,8 +288,9 @@ function applyFilter(status, permitType,housingMin, housingMax) {
                         opacity: 1,
                         fillOpacity: 0.8
                     }).bindPopup(`<strong>Permit Number:</strong> ${feature.properties.permitnum}<br>
-                                  <strong>Status:</strong> ${feature.properties.originaladdress}<br>
-                                  <strong>Address:</strong> ${feature.properties.statuscurrent}<br>
+                                  <strong>Address:</strong> ${feature.properties.originaladdress}<br>
+                                  <strong>Statuss:</strong> ${feature.properties.statuscurrent}<br>
+                                  <strong>Statuss:</strong> ${feature.properties.permittype}<br>
                                   <strong>Issued Date:</strong> ${feature.properties.issueddate}<br>
                                   <strong>Description:</strong> ${feature.properties.description}<br>
                                   <strong>Housing Units:</strong> ${feature.properties.housingunits}<br>
